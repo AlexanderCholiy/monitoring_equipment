@@ -23,8 +23,7 @@ services:
 
   # Django backend
   ts_core_backend:
-    build:
-      context: .
+    image: alexandercholiy/ts_core_backend
     env_file: .env
     volumes:
       - ts_core_static:/backend_static
@@ -36,11 +35,17 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
+    command: >
+      sh -c "
+        python manage.py migrate &&
+        python manage.py collectstatic --noinput &&
+        cp -r /app/collected_static/. /backend_static/ &&
+        gunicorn backend.wsgi:application --bind 0.0.0.0:8000
+      "
 
   # Nginx
   ts_core_gateway:
-    build:
-      context: ./gateway/
+    image: alexandercholiy/ts_core_gateway
     ports:
       - "8000:80"
     volumes:
